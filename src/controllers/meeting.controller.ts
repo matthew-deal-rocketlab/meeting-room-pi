@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { RequestHandler } from "express";
 import { MeetingStatusUpdate, RoomStatus } from "../types/meeting.types";
 
 const simulateLED = (status: RoomStatus) => {
@@ -15,21 +15,22 @@ const simulateLED = (status: RoomStatus) => {
   }
 };
 
-export const updateMeetingStatus = (req: Request, res: Response) => {
+export const updateMeetingStatus: RequestHandler = (req, res, next) => {
   try {
     console.log("Received request at meeting status endpoint");
     console.log("Request path:", req.path);
     console.log("Request method:", req.method);
     console.log("Request headers:", req.headers);
 
-    const update: MeetingStatusUpdate = req.body;
+    const update = req.body as MeetingStatusUpdate;
 
     if (!update || !update.status) {
       console.error("Invalid request body:", update);
-      return res.status(400).json({
+      res.status(400).json({
         error: "Invalid request body",
         message: "Status is required",
       });
+      return;
     }
 
     // Simulate LED behavior
@@ -59,16 +60,11 @@ export const updateMeetingStatus = (req: Request, res: Response) => {
 
     console.log("\n================================\n");
 
-    return res.status(200).json({
+    res.status(200).json({
       message: "Status updated successfully",
       currentStatus: update.status,
     });
   } catch (error) {
-    console.error("Error in updateMeetingStatus:", error);
-    return res.status(500).json({
-      error: "Internal server error",
-      message:
-        error instanceof Error ? error.message : "Unknown error occurred",
-    });
+    next(error);
   }
 };
